@@ -22,7 +22,7 @@ DEFAULT_SETTINGS = {
     "openai_key": "",
     "openai_model": "gpt-4o-mini-tts",
     "openai_voice": "onyx",
-    "openai_instructions": "Speak in a clear, neutral General American accent, like a professional YouTube narrator.",
+    "openai_instructions": "",
     "elevenlabs_key": "",
     "elevenlabs_voice_id": "pNInz6obpgDQGcFmaJgB",
     "elevenlabs_model": "eleven_multilingual_v2",
@@ -30,7 +30,8 @@ DEFAULT_SETTINGS = {
     "gemini_model": "gemini-3.8-flash-tts",
     "gemini_voice": "Charon",
     "gemini_coach_model": "gemini-3.8-flash",
-    "gemini_style": "Calm, confident documentary narrator. Clear, natural pace.",
+    "gemini_style": "",
+    "energy": "engaging",              # calm | engaging | hype | dramatic
     "target_speaker": "",              # speaker id whose style you're matching
     "export_gap": 0.45,                # seconds of silence between sentences
     "youtube_max_minutes": 10,

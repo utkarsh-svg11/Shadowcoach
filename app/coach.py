@@ -23,6 +23,8 @@ Sentence: "{text}"
 {extra}
 Listen carefully to the actual sounds, not just the words. Compare the STUDENT to the REFERENCE and coach them like a friendly, direct human coach would in a one-on-one session.
 
+Also judge ENERGY and expressiveness: a YouTube narrator must sound alive. If the student is flatter, quieter or less punchy than the reference, that is a fix (type "energy") — say which words to punch and how to lift the voice.
+
 Focus on what most makes the student sound Indian rather than American, for example: retroflex t/d, v/w mix-ups, "th" said as t/d, r sounds, flat or un-glided vowels (o, a, e), every syllable given equal weight instead of reducing unstressed vowels to "uh", wrong word stress, flat or sing-song melody, sentence endings that rise instead of fall, choppy rhythm.
 
 Rules:
@@ -41,7 +43,7 @@ Reply with ONLY a JSON object, no markdown, in exactly this shape:
   "fixes": [
     {{
       "word": "<the exact word or short phrase from the sentence>",
-      "type": "<sound | stress | melody | rhythm>",
+      "type": "<sound | stress | melody | rhythm | energy>",
       "you_said": "<how the student said it, plain respelling or description>",
       "american": "<how the reference / an American says it, plain respelling>",
       "how": "<1-2 sentences: exactly what to physically do differently>"

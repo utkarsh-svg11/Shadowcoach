@@ -66,6 +66,14 @@ async function showSession(pid) {
   S.i = Math.min(ls.get(`pos_${pid}`, 0), S.p.sentences.length - 1);
   const settings = await api("/api/settings");
   $("#provider").value = settings.tts_provider;
+  S.energy = settings.energy || "engaging";
+  $("#energy").value = S.energy;
+  $("#energy").onchange = async (e) => {
+    S.energy = e.target.value;
+    await api("/api/settings", { json: { energy: S.energy } });
+    toast("Making the reference with more " + ({ calm: "calm", engaging: "energy", hype: "hype", dramatic: "drama" })[S.energy] + "…");
+    makeRef(true);
+  };
   $("#sess-title").textContent = S.p.title;
   $("#back").onclick = () => go("scripts");
   $("#regen-group").hidden = S.p.kind === "speaker";
@@ -141,17 +149,29 @@ async function select(i) {
   renderLine();
   renderTakes();
   const s = cur();
-  if (!s.ref_url && S.p.kind !== "speaker") await makeRef(false);
+  const stale = s.ref_url && (s.ref_energy || null) !== S.energy;
+  if ((!s.ref_url || stale) && S.p.kind !== "speaker") await makeRef(false);
   else setRefSrc();
   // show analysis of the kept/latest take, if any
   const t = s.takes.find((x) => x.kept) || s.takes.at(-1);
-  if (t?.scores) { try { showAnalysis(await api(`/api/projects/${S.p.id}/takes/${t.id}`)); } catch {} }
+  if (t) {
+    let a = null;
+    try { a = await api(`/api/projects/${S.p.id}/takes/${t.id}`); } catch {}
+    if (i !== S.i) return;
+    if (!a || (a.coach === undefined && a.coach_error === undefined)) {
+      // older take, recorded before the coach existed: let the coach listen to it now
+      $("#analysing").hidden = false;
+      try { a = await api(`/api/projects/${S.p.id}/sentences/${i}/takes/${t.id}/analyse`, { method: "POST" }); } catch (e) { toast(e.message); }
+      finally { $("#analysing").hidden = true; }
+    }
+    if (a && i === S.i) showAnalysis(a);
+  }
   prefetch(i + 1);
 }
 
 function setRefSrc() {
   const s = cur();
-  const label = s.ref_provider === "speaker" ? `Real voice · ${s.ref_note || "speaker"}` : s.ref_provider ? `${s.ref_provider} voice` : "No reference yet";
+  const label = s.ref_provider === "speaker" ? `Real voice · ${s.ref_note || "speaker"}` : s.ref_provider ? `${s.ref_provider} voice${s.ref_energy ? " · " + ({ calm: "calm", engaging: "engaging", hype: "high energy", dramatic: "dramatic" })[s.ref_energy] : ""}` : "No reference yet";
   $("#ref-src").textContent = label;
   if (s.ref_url) { S.refAudio.src = s.ref_url; S.refAudio.playbackRate = S.rate; S.refAudio.loop = $("#loop").checked; }
 }
@@ -161,17 +181,17 @@ async function makeRef(force) {
   $("#ref-src").textContent = "Generating reference…";
   try {
     const s = await api(`/api/projects/${S.p.id}/sentences/${i}/reference?provider=${$("#provider").value}`, { method: "POST" });
-    S.p.sentences[i].ref_url = s.ref_url; S.p.sentences[i].ref_provider = s.ref_provider;
+    S.p.sentences[i].ref_url = s.ref_url; S.p.sentences[i].ref_provider = s.ref_provider; S.p.sentences[i].ref_energy = s.ref_energy;
     if (i === S.i) { setRefSrc(); if (force) playRef(); }
   } catch (e) { $("#ref-src").textContent = "No reference"; toast(e.message, 6000); }
 }
 
 async function prefetch(i) {
   const s = S.p.sentences[i];
-  if (!s || s.ref_url || S.p.kind === "speaker") return;
+  if (!s || (s.ref_url && (s.ref_energy || null) === S.energy) || S.p.kind === "speaker") return;
   try {
     const r = await api(`/api/projects/${S.p.id}/sentences/${i}/reference?provider=${$("#provider").value}`, { method: "POST" });
-    s.ref_url = r.ref_url; s.ref_provider = r.ref_provider;
+    s.ref_url = r.ref_url; s.ref_provider = r.ref_provider; s.ref_energy = r.ref_energy;
   } catch {}
 }
 
@@ -252,12 +272,12 @@ function renderTakes() {
     const sc = t.scores?.overall;
     el.innerHTML = `<button class="play">▶</button><span class="small muted">Take ${takes.length - k}</span>
       <span class="sc" style="color:var(--${tone(sc) || "mute"})">${sc != null ? `${Math.round(sc)}/100` : "—"}</span>
-      <button class="show">Feedback</button><button class="cmp">A/B</button>
+      <button class="show">Coach</button><button class="cmp">A/B</button>
       <button class="star ${t.kept ? "on" : ""}" title="Use this take in the final voiceover (K)">★ Keep</button><button class="del">✕</button>`;
     $(".play", el).onclick = () => { S.refAudio.pause(); S.youAudio.src = t.url; S.youAudio.play(); };
     $(".cmp", el).onclick = () => abCompare(t.url);
     $(".show", el).onclick = async () => {
-      try { showAnalysis(await api(`/api/projects/${S.p.id}/takes/${t.id}`)); }
+      try { const a = await api(`/api/projects/${S.p.id}/takes/${t.id}`); if (a.coach === undefined && a.coach_error === undefined) throw 0; showAnalysis(a); }
       catch { $("#analysing").hidden = false; try { showAnalysis(await api(`/api/projects/${S.p.id}/sentences/${S.i}/takes/${t.id}/analyse`, { method: "POST" })); } catch (e) { toast(e.message); } finally { $("#analysing").hidden = true; } }
     };
     $(".star", el).onclick = () => keepTake(t.id);

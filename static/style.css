@@ -168,3 +168,7 @@ details[open] summary{margin-bottom:14px}
 .linkish{background:none;border:0;color:var(--ref);padding:6px 0 0;cursor:pointer}
 .line .w.coachmark{background:rgba(242,165,65,.18);border-radius:5px}
 @media (max-width:860px){.fix-compare{grid-template-columns:1fr}.fix-compare .arrow{display:none}.coach-top{flex-direction:column}}
+
+.grid3.four{grid-template-columns:repeat(4,1fr)}
+#energy{width:auto;margin:0}
+@media (max-width:860px){.grid3.four{grid-template-columns:1fr}}

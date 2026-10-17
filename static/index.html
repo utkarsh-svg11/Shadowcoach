@@ -72,6 +72,12 @@
             <label class="toggle"><input type="checkbox" id="loop"> Loop</label>
           </div>
           <div class="group" id="regen-group">
+            <select id="energy" title="How much energy the reference voice has">
+              <option value="calm">Calm</option>
+              <option value="engaging">Engaging</option>
+              <option value="hype">High energy</option>
+              <option value="dramatic">Dramatic</option>
+            </select>
             <select id="provider">
               <option value="azure">Azure voice</option>
               <option value="openai">OpenAI voice</option>
@@ -166,7 +172,7 @@
           <label>API key<input type="password" data-k="openai_key" autocomplete="off"></label>
           <label>Model<input data-k="openai_model" list="openai-models"></label>
           <label>Voice<input data-k="openai_voice" list="openai-voices"></label>
-          <label>Style instructions<textarea data-k="openai_instructions" rows="3"></textarea></label>
+          <label>Extra style notes <span class="muted small">(optional)</span><textarea data-k="openai_instructions" rows="2" placeholder="Energy is set by the Energy picker"></textarea></label>
         </fieldset>
         <fieldset>
           <legend>ElevenLabs</legend>
@@ -181,11 +187,12 @@
           <label>Voice<input data-k="gemini_voice" list="gemini-voices"></label>
           <button class="ghost small" id="gemini-find" type="button">Find American-accent voices</button>
           <div id="gemini-found" class="small muted"></div>
-          <label style="margin-top:12px">Delivery style<textarea data-k="gemini_style" rows="2"></textarea></label>
+          <label style="margin-top:12px">Extra style notes <span class="muted small">(optional)</span><textarea data-k="gemini_style" rows="2" placeholder="Energy is set by the Energy picker"></textarea></label>
         </fieldset>
       </div>
       <h2>Coaching</h2>
-      <div class="grid3">
+      <div class="grid3 four">
+        <label>Reference energy<select data-k="energy"><option value="calm">Calm</option><option value="engaging">Engaging</option><option value="hype">High energy</option><option value="dramatic">Dramatic</option></select></label>
         <label>Match my style to<select data-k="target_speaker" id="target-select"></select></label>
         <label>Gap between sentences in export (sec)<input type="number" step="0.05" data-k="export_gap"></label>
         <label>Max YouTube minutes to analyse<input type="number" data-k="youtube_max_minutes"></label>

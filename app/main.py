@@ -76,7 +76,7 @@ def project_view(p):
     v = dict(p)
     v["sentences"] = []
     for s in p["sentences"]:
-        sv = {k: s.get(k) for k in ("text", "ref_provider", "ref_note")}
+        sv = {k: s.get(k) for k in ("text", "ref_provider", "ref_note", "ref_energy")}
         sv["ref_url"] = store.media_url(s["ref_path"]) + f"?v={int(s.get('ref_time', 0))}" if s.get("ref_path") else None
         sv["takes"] = [{k: t.get(k) for k in ("id", "created", "scores", "kept")} |
                        {"url": store.media_url(t["path"])} for t in s.get("takes", [])]
@@ -186,6 +186,10 @@ def make_reference(pid: str, i: int, provider: str | None = None):
     except tts.TTSError as e:
         raise HTTPException(400, str(e))
     s["ref_path"], s["ref_provider"], s["ref_time"] = out, used, time.time()
+    s["ref_energy"] = settings.get("energy") or "engaging"
+    for stale in (out + ".16k.wav", out + ".analysis.json"):
+        if os.path.exists(stale):
+            os.remove(stale)
     s.pop("ref_analysis_path", None)
     store.save_project(p)
     return project_view(p)["sentences"][i]

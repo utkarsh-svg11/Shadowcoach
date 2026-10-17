@@ -11,6 +11,38 @@ class TTSError(Exception):
     pass
 
 
+# Delivery energy presets — applied to every provider so the reference sounds like a real YouTube narrator.
+ENERGY = {
+    "calm": {"style": "Calm, measured documentary narrator. Warm and clear, unhurried.",
+             "azure": {"rate": "0%", "pitch": "0%", "express": None},
+             "eleven": {"stability": 0.6, "style": 0.0}},
+    "engaging": {"style": "Energetic, engaging YouTube storyteller. Bright and confident with lots of vocal variety: punch the key words, build intrigue, keep a lively forward pace, and let sentence endings land firmly.",
+                 "azure": {"rate": "+6%", "pitch": "+3%", "express": "cheerful"},
+                 "eleven": {"stability": 0.38, "style": 0.45}},
+    "hype": {"style": "High-energy, hyped YouTube narrator revealing a shocking twist. Fast, excited and punchy, with big emphasis and dramatic pitch jumps on the key words.",
+             "azure": {"rate": "+12%", "pitch": "+6%", "express": "excited"},
+             "eleven": {"stability": 0.28, "style": 0.7}},
+    "dramatic": {"style": "Dramatic, suspenseful storyteller. Lean in, slow down on the reveals, strong contrast between quiet intensity and hard-hitting emphasis on key words.",
+                 "azure": {"rate": "-4%", "pitch": "-2%", "express": "serious"},
+                 "eleven": {"stability": 0.35, "style": 0.6}},
+}
+OLD_DEFAULT_STYLES = {"Calm, confident documentary narrator. Clear, natural pace."}
+AZURE_EXPRESSIVE = {"en-US-DavisNeural", "en-US-GuyNeural", "en-US-JasonNeural", "en-US-TonyNeural",
+                    "en-US-JennyNeural", "en-US-AriaNeural", "en-US-SaraNeural", "en-US-NancyNeural"}
+
+
+def energy_of(s):
+    return ENERGY.get(s.get("energy") or "engaging", ENERGY["engaging"])
+
+
+def style_text(s, extra_key):
+    extra = (s.get(extra_key) or "").strip()
+    if extra in OLD_DEFAULT_STYLES:
+        extra = ""
+    base = energy_of(s)["style"] + " Natural General American accent."
+    return f"{base} {extra}".strip()
+
+
 def synthesize(text, out_wav, settings, provider=None):
     provider = provider or settings.get("tts_provider", "azure")
     if provider == "azure":
@@ -31,9 +63,15 @@ def _azure(text, out_wav, s):
     if not key:
         raise TTSError("Add your Azure Speech key in Settings.")
     voice = s.get("azure_voice") or "en-US-AndrewNeural"
-    rate = s.get("azure_rate") or "0%"
-    ssml = (f"<speak version='1.0' xml:lang='en-US'><voice name='{escape(voice)}'>"
-            f"<prosody rate='{escape(rate)}'>{escape(text)}</prosody></voice></speak>")
+    e = energy_of(s)["azure"]
+    user_rate = (s.get("azure_rate") or "0%").strip()
+    rate = e["rate"] if user_rate in ("0%", "") else user_rate
+    inner = f"<prosody rate='{escape(rate)}' pitch='{escape(e['pitch'])}'>{escape(text)}</prosody>"
+    if e["express"] and voice in AZURE_EXPRESSIVE:
+        inner = f"<mstts:express-as style='{e['express']}'>{inner}</mstts:express-as>"
+    ssml = ("<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' "
+            "xmlns:mstts='https://www.w3.org/2001/mstts' xml:lang='en-US'>"
+            f"<voice name='{escape(voice)}'>{inner}</voice></speak>")
     r = httpx.post(f"https://{region}.tts.speech.microsoft.com/cognitiveservices/v1",
                    headers={"Ocp-Apim-Subscription-Key": key,
                             "Content-Type": "application/ssml+xml",
@@ -53,8 +91,8 @@ def _openai(text, out_wav, s):
     model = s.get("openai_model") or "gpt-4o-mini-tts"
     body = {"model": model, "voice": s.get("openai_voice") or "onyx", "input": text,
             "response_format": "wav"}
-    if model.startswith("gpt-4o") and s.get("openai_instructions"):
-        body["instructions"] = s["openai_instructions"]
+    if model.startswith("gpt-4o"):
+        body["instructions"] = style_text(s, "openai_instructions")
     r = httpx.post("https://api.openai.com/v1/audio/speech",
                    headers={"Authorization": f"Bearer {key}"}, json=body, timeout=120)
     if r.status_code != 200:
@@ -95,9 +133,8 @@ def _gemini(text, out_wav, s):
     key = s.get("gemini_key")
     if not key:
         raise TTSError("Add your Gemini API key (from Google AI Studio) in Settings.")
-    content = {"type": "text", "text": text}
-    if s.get("gemini_style"):
-        content["annotations"] = [{"type": "speech_metadata", "style": s["gemini_style"]}]
+    content = {"type": "text", "text": text,
+               "annotations": [{"type": "speech_metadata", "style": style_text(s, "gemini_style")}]}
     body = {"model": s.get("gemini_model") or "gemini-3.8-flash-tts",
             "input": [{"type": "user_input", "content": [content]}],
             "response_format": {"type": "audio"},
@@ -153,7 +190,9 @@ def _elevenlabs(text, out_wav, s):
     vid = s.get("elevenlabs_voice_id") or "pNInz6obpgDQGcFmaJgB"
     r = httpx.post(f"https://api.elevenlabs.io/v1/text-to-speech/{vid}?output_format=mp3_44100_128",
                    headers={"xi-api-key": key, "Content-Type": "application/json"},
-                   json={"text": text, "model_id": s.get("elevenlabs_model") or "eleven_multilingual_v2"},
+                   json={"text": text, "model_id": s.get("elevenlabs_model") or "eleven_multilingual_v2",
+                         "voice_settings": {"stability": energy_of(s)["eleven"]["stability"], "similarity_boost": 0.75,
+                                            "style": energy_of(s)["eleven"]["style"], "use_speaker_boost": True}},
                    timeout=120)
     if r.status_code != 200:
         raise TTSError(f"ElevenLabs error {r.status_code}: {r.text[:200]}")
