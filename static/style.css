@@ -110,6 +110,10 @@ button:disabled{opacity:.45;cursor:default}
 .radio-row{display:flex;gap:18px;margin-bottom:14px}
 .radio-row label{display:flex;align-items:center;color:var(--ink);margin:0}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
+.voices-grid{grid-template-columns:repeat(2,1fr)}
+.found-voice{display:block;padding:5px 0;border-bottom:1px solid var(--line);cursor:pointer;color:var(--ink)}
+.found-voice:hover{color:var(--ref)}
+#gemini-found{max-height:180px;overflow:auto;margin-top:8px}
 fieldset{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 legend{padding:0 6px;font-weight:600}
 .sp-card{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--bg2)}

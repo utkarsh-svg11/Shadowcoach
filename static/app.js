@@ -443,6 +443,16 @@ async function showSettings() {
     if (el.type === "password") el.placeholder = s[k + "_set"] ? `Saved ${s[k + "_hint"]}` : "Not set";
     else el.value = s[k] ?? "";
   });
+  $("#gemini-find").onclick = async () => {
+    const box = $("#gemini-found");
+    box.textContent = "Looking…";
+    try {
+      const vs = await api("/api/gemini/voices");
+      box.innerHTML = vs.length ? vs.map((v) => `<span class="found-voice" data-id="${esc(v.id)}"><b>${esc(v.name)}</b> · ${esc(v.gender || "")} ${esc(v.accent || "")}<br><span class="muted">${esc(v.description || "")}</span></span>`).join("")
+        : "No American voices returned. The built-in voices in the list still work.";
+      $$(".found-voice", box).forEach((el) => (el.onclick = () => { $('[data-k="gemini_voice"]').value = el.dataset.id; toast("Voice picked. Save settings to use it."); }));
+    } catch (e) { box.textContent = e.message; }
+  };
   $("#save-settings").onclick = async () => {
     const patch = { tts_provider: $("input[name=tts_provider]:checked")?.value || "azure" };
     $$("[data-k]").forEach((el) => {

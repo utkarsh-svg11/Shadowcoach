@@ -32,6 +32,7 @@ YouTube often blocks downloads from cloud servers. If that happens, download the
 | Service | Used for | Free tier |
 |---|---|---|
 | **Azure Speech** (required for the accent check) | accent check, speaker transcription, default reference voice | F0: 5 audio hours/month speech-to-text, 0.5M characters/month neural TTS |
+| Gemini / Google AI Studio (optional) | alternative reference voice | free tier with daily limits |
 | OpenAI (optional) | alternative reference voice | paid |
 | ElevenLabs (optional) | alternative reference voice | limited free credits |
 

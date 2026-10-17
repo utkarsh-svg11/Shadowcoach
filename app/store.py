@@ -14,7 +14,7 @@ for d in (DATA_DIR, PROJECTS_DIR, SPEAKERS_DIR):
 _lock = threading.RLock()
 
 DEFAULT_SETTINGS = {
-    "tts_provider": "azure",           # azure | openai | elevenlabs
+    "tts_provider": "azure",           # azure | openai | elevenlabs | gemini
     "azure_key": "",
     "azure_region": "eastus",
     "azure_voice": "en-US-AndrewNeural",
@@ -26,11 +26,15 @@ DEFAULT_SETTINGS = {
     "elevenlabs_key": "",
     "elevenlabs_voice_id": "pNInz6obpgDQGcFmaJgB",
     "elevenlabs_model": "eleven_multilingual_v2",
+    "gemini_key": "",
+    "gemini_model": "gemini-3.8-flash-tts",
+    "gemini_voice": "Charon",
+    "gemini_style": "Calm, confident documentary narrator. Clear, natural pace.",
     "target_speaker": "",              # speaker id whose style you're matching
     "export_gap": 0.45,                # seconds of silence between sentences
     "youtube_max_minutes": 10,
 }
-SECRET_KEYS = ("azure_key", "openai_key", "elevenlabs_key")
+SECRET_KEYS = ("azure_key", "openai_key", "elevenlabs_key", "gemini_key")
 
 
 def new_id():
@@ -60,7 +64,7 @@ def get_settings():
     s.update(read_json(SETTINGS_PATH, {}) or {})
     # environment variables act as fallbacks for keys (handy on Railway)
     for k, env in (("azure_key", "AZURE_SPEECH_KEY"), ("azure_region", "AZURE_SPEECH_REGION"),
-                   ("openai_key", "OPENAI_API_KEY"), ("elevenlabs_key", "ELEVENLABS_API_KEY")):
+                   ("openai_key", "OPENAI_API_KEY"), ("elevenlabs_key", "ELEVENLABS_API_KEY"), ("gemini_key", "GEMINI_API_KEY")):
         if not s.get(k) and os.environ.get(env):
             s[k] = os.environ[env]
     return s

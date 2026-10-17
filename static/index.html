@@ -75,6 +75,7 @@
               <option value="azure">Azure voice</option>
               <option value="openai">OpenAI voice</option>
               <option value="elevenlabs">ElevenLabs voice</option>
+              <option value="gemini">Gemini voice</option>
             </select>
             <button class="ghost" id="regen">Regenerate</button>
           </div>
@@ -145,8 +146,9 @@
         <label><input type="radio" name="tts_provider" value="azure"> Azure</label>
         <label><input type="radio" name="tts_provider" value="openai"> OpenAI</label>
         <label><input type="radio" name="tts_provider" value="elevenlabs"> ElevenLabs</label>
+        <label><input type="radio" name="tts_provider" value="gemini"> Gemini <span class="muted small">(free tier)</span></label>
       </div>
-      <div class="grid3">
+      <div class="grid3 voices-grid">
         <fieldset>
           <legend>Azure Speech <span class="muted small">(also runs the accent check)</span></legend>
           <label>Key<input type="password" data-k="azure_key" autocomplete="off"></label>
@@ -167,6 +169,15 @@
           <label>Voice ID<input data-k="elevenlabs_voice_id"></label>
           <label>Model<input data-k="elevenlabs_model"></label>
         </fieldset>
+        <fieldset>
+          <legend>Gemini <span class="muted small">(Google AI Studio key)</span></legend>
+          <label>API key<input type="password" data-k="gemini_key" autocomplete="off"></label>
+          <label>Model<input data-k="gemini_model" list="gemini-models"></label>
+          <label>Voice<input data-k="gemini_voice" list="gemini-voices"></label>
+          <button class="ghost small" id="gemini-find" type="button">Find American-accent voices</button>
+          <div id="gemini-found" class="small muted"></div>
+          <label style="margin-top:12px">Delivery style<textarea data-k="gemini_style" rows="2"></textarea></label>
+        </fieldset>
       </div>
       <h2>Coaching</h2>
       <div class="grid3">
@@ -179,6 +190,8 @@
     </div>
   </section>
   <datalist id="azure-voices"><option>en-US-AndrewNeural<option>en-US-BrianNeural<option>en-US-GuyNeural<option>en-US-DavisNeural<option>en-US-ChristopherNeural<option>en-US-AvaNeural<option>en-US-EmmaNeural<option>en-US-JennyNeural</datalist>
+  <datalist id="gemini-models"><option>gemini-3.8-flash-tts<option>gemini-3.8-flash-lite-tts</datalist>
+  <datalist id="gemini-voices"><option>Charon<option>Orus<option>Iapetus<option>Algieba<option>Alnilam<option>Schedar<option>Kore<option>Aoede<option>Sulafat<option>Achird</datalist>
   <datalist id="openai-models"><option>gpt-4o-mini-tts<option>tts-1-hd<option>tts-1</datalist>
   <datalist id="openai-voices"><option>onyx<option>ash<option>echo<option>alloy<option>ballad<option>sage<option>verse<option>nova<option>shimmer<option>coral</datalist>
 </template>

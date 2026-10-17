@@ -95,6 +95,17 @@ def post_settings(patch: dict):
     return store.save_settings(patch)
 
 
+@app.get("/api/gemini/voices")
+def gemini_voices():
+    key = store.get_settings().get("gemini_key")
+    if not key:
+        raise HTTPException(400, "Save your Gemini API key first.")
+    try:
+        return tts.gemini_voices(key)
+    except tts.TTSError as e:
+        raise HTTPException(400, str(e))
+
+
 # ---------- projects ----------
 class NewProject(BaseModel):
     title: str
