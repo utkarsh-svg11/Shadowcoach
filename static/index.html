@@ -45,6 +45,7 @@
         <h3 id="sess-title"></h3>
         <div class="progress"><div id="prog-bar"></div></div>
         <div class="muted small" id="prog-text"></div>
+        <button class="linkish small" id="resplit" title="Join lines that were broken mid-sentence">Fix sentence splitting</button>
       </div>
       <ol id="sent-list"></ol>
       <div class="export">
@@ -95,16 +96,20 @@
         <div class="keys muted small">Space reference · R record · A compare · K keep · ← → move</div>
       </div>
 
+      <div class="card coach" id="coach" hidden></div>
       <div class="card results" id="results" hidden>
-        <div class="scores" id="scores"></div>
-        <div id="warnings"></div>
-        <h4>What to fix</h4>
-        <ul class="notes" id="notes"></ul>
-        <h4>Melody <span class="legend"><i class="lg-ref"></i>Reference <i class="lg-you"></i>You</span></h4>
-        <canvas id="chart" height="220"></canvas>
-        <div class="stats small muted" id="stats"></div>
+        <details id="details">
+          <summary>Detailed measurements <span class="muted small">— sound scores, melody graph, rhythm</span></summary>
+          <div class="scores" id="scores"></div>
+          <div id="warnings"></div>
+          <h4>Measured issues</h4>
+          <ul class="notes" id="notes"></ul>
+          <h4>Melody <span class="legend"><i class="lg-ref"></i>Reference <i class="lg-you"></i>You</span></h4>
+          <canvas id="chart" height="220"></canvas>
+          <div class="stats small muted" id="stats"></div>
+        </details>
       </div>
-      <div class="card analysing" id="analysing" hidden><div class="spinner"></div>Listening to your take…</div>
+      <div class="card analysing" id="analysing" hidden><div class="spinner"></div>The coach is listening to your take…</div>
 
       <div class="card">
         <h4>Takes</h4>
@@ -190,6 +195,7 @@
     </div>
   </section>
   <datalist id="azure-voices"><option>en-US-AndrewNeural<option>en-US-BrianNeural<option>en-US-GuyNeural<option>en-US-DavisNeural<option>en-US-ChristopherNeural<option>en-US-AvaNeural<option>en-US-EmmaNeural<option>en-US-JennyNeural</datalist>
+  <datalist id="gemini-coach-models"><option>gemini-3.8-flash<option>gemini-3.8-flash-lite</datalist>
   <datalist id="gemini-models"><option>gemini-3.8-flash-tts<option>gemini-3.8-flash-lite-tts</datalist>
   <datalist id="gemini-voices"><option>Charon<option>Orus<option>Iapetus<option>Algieba<option>Alnilam<option>Schedar<option>Kore<option>Aoede<option>Sulafat<option>Achird</datalist>
   <datalist id="openai-models"><option>gpt-4o-mini-tts<option>tts-1-hd<option>tts-1</datalist>

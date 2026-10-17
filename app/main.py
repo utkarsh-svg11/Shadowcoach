@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import audio, azure_speech, feedback, prosody, speakers, store, tts
+from . import audio, azure_speech, coach, feedback, prosody, speakers, store, tts
 
 app = FastAPI(title="ShadowCoach")
 STATIC = os.path.join(os.path.dirname(__file__), "..", "static")
@@ -46,8 +46,8 @@ ABBR = r"(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|etc|e\.g|i\.e|U\.S|U\.K|No|Inc|Ltd|Co)
 def split_sentences(script):
     script = script.replace("\r", "")
     out = []
-    for para in re.split(r"\n\s*\n|\n", script):
-        para = para.strip()
+    for para in re.split(r"\n\s*\n", script):
+        para = re.sub(r"\s+", " ", para).strip()
         if not para:
             continue
         protected = re.sub(ABBR + r"\.", lambda m: m.group(0).replace(".", "§"), para)
@@ -140,6 +140,21 @@ def delete_project(pid: str):
     return {"ok": True}
 
 
+@app.post("/api/projects/{pid}/resplit")
+def resplit(pid: str):
+    """Re-split the whole script with the current rules. Takes stay on sentences whose text didn't change."""
+    p = load_project(pid)
+    if p.get("kind") == "speaker":
+        raise HTTPException(400, "Speaker clip sessions can't be re-split.")
+    old = {s["text"]: s for s in p["sentences"]}
+    new = []
+    for text in split_sentences(" ".join(s["text"] for s in p["sentences"])):
+        new.append(old.get(text) or {"text": text, "takes": []})
+    p["sentences"] = new
+    store.save_project(p)
+    return project_view(p)
+
+
 class EditSentence(BaseModel):
     text: str
 
@@ -207,7 +222,7 @@ def analyse_take(p, i, take):
         except azure_speech.AzureError as e:
             result["warnings"].append(str(e))
     else:
-        result["warnings"].append("Add an Azure Speech key in Settings to get sound-by-sound scores. Showing melody only.")
+        pass  # Azure is optional now that the coach can listen
 
     you_f = prosody.features(wav16, you_assess["words"] if you_assess else None)
     comparison = None
@@ -231,6 +246,25 @@ def analyse_take(p, i, take):
     result["stats"]["you"] = {"rate_wps": you_f.get("rate_wps"), "range_st": you_f.get("range_st")}
 
     fb = feedback.build(you_assess, comparison, you_f, profile, pname)
+
+    # --- the AI coach listens to both recordings and explains what to change ---
+    result["coach"] = None
+    if not s.get("ref_path"):
+        pass
+    elif not settings.get("gemini_key"):
+        result["coach_error"] = "Add your Gemini API key in Settings to turn on the coach. It listens to your take and tells you exactly what to change."
+    else:
+        try:
+            ref16 = s["ref_path"] + ".16k.wav"
+            if not os.path.exists(ref16):
+                audio.to_wav16k(s["ref_path"], ref16)
+            hints = [n["text"] for n in fb["all"] if n["kind"] in ("sound", "stress", "missing")]
+            result["coach"] = coach.coach(ref16, wav16, s["text"], settings["gemini_key"],
+                                          settings.get("gemini_coach_model"), hints)
+        except coach.CoachError as e:
+            result["coach_error"] = str(e)
+        except Exception as e:  # noqa: BLE001
+            result["coach_error"] = f"The coach hit a problem: {e}"[:300]
     result["notes"] = fb
     if you_assess:
         result["scores"] = you_assess["scores"]
@@ -260,7 +294,7 @@ def upload_take(pid: str, i: int, file: UploadFile = File(...), analyse: bool = 
     analysis = None
     if analyse:
         analysis = analyse_take(p, i, take)
-        take["scores"] = analysis["scores"]
+        take["scores"] = analysis["scores"] or ({"overall": analysis["coach"]["american_score"]} if analysis.get("coach") and analysis["coach"].get("american_score") is not None else None)
         store.write_json(os.path.join(tdir, f"{tid}.json"), analysis)
     p = load_project(pid)  # reload: reference analysis may have been cached meanwhile
     p["sentences"][i].setdefault("takes", []).append(take)
@@ -288,7 +322,7 @@ def reanalyse(pid: str, i: int, tid: str):
     p = load_project(pid)
     for t in p["sentences"][i]["takes"]:
         if t["id"] == tid:
-            t["scores"] = analysis["scores"]
+            t["scores"] = analysis["scores"] or ({"overall": analysis["coach"]["american_score"]} if analysis.get("coach") and analysis["coach"].get("american_score") is not None else None)
     store.save_project(p)
     store.write_json(os.path.join(store.project_dir(pid), "takes", f"{tid}.json"), analysis)
     return analysis

@@ -86,6 +86,11 @@ async function showSession(pid) {
   $("#prev").onclick = () => select(S.i - 1);
   $("#next").onclick = () => select(S.i + 1);
   $("#export").onclick = exportVO;
+  $("#resplit").hidden = S.p.kind === "speaker";
+  $("#resplit").onclick = async () => {
+    try { S.p = await api(`/api/projects/${S.p.id}/resplit`, { method: "POST" }); S.i = 0; renderList(); select(0); toast(`Now ${S.p.sentences.length} sentences.`); }
+    catch (e) { toast(e.message); }
+  };
   document.onkeydown = keys;
   renderList();
   select(S.i);
@@ -132,7 +137,7 @@ async function select(i) {
   $$("#sent-list li").forEach((li, k) => li.classList.toggle("cur", k === i));
   $("#sent-list li.cur")?.scrollIntoView({ block: "nearest" });
   $("#line-num").textContent = `Sentence ${i + 1} of ${S.p.sentences.length}`;
-  $("#results").hidden = true; $("#word-detail").hidden = true;
+  $("#results").hidden = true; $("#coach").hidden = true; $("#word-detail").hidden = true; S.focusWord = null;
   renderLine();
   renderTakes();
   const s = cur();
@@ -225,7 +230,7 @@ async function onRecorded() {
   const fd = new FormData();
   fd.append("file", blob, `take.${ext}`);
   fd.append("analyse", analyse ? "true" : "false");
-  if (analyse) { $("#analysing").hidden = false; $("#results").hidden = true; }
+  if (analyse) { $("#analysing").hidden = false; $("#results").hidden = true; $("#coach").hidden = true; }
   try {
     const res = await api(`/api/projects/${S.p.id}/sentences/${i}/takes`, { method: "POST", body: fd });
     S.p.sentences[i].takes.push(res.take);
@@ -270,16 +275,65 @@ async function keepTake(tid) {
 }
 
 // ---- analysis display ----
+const normW = (w) => String(w).toLowerCase().replace(/[^a-z0-9']/g, "");
+function coachWordSet(a) {
+  const set = new Set();
+  (a?.coach?.fixes || []).forEach((f) => String(f.word).split(/\s+/).forEach((w) => w && set.add(normW(w))));
+  return set;
+}
 function renderLine() {
   const a = S.lastAnalysis;
   const el = $("#line-text");
-  if (!a?.words) { el.textContent = cur().text; return; }
+  const coached = coachWordSet(a);
+  const focus = S.focusWord ? new Set(String(S.focusWord).split(/\s+/).map(normW)) : null;
+  if (!a?.words) {
+    el.innerHTML = cur().text.split(/\s+/).map((w) => {
+      const k = normW(w);
+      return `<span class="w ${coached.has(k) ? "coachmark" : ""} ${focus?.has(k) ? "sel" : ""}">${esc(w)}</span>`;
+    }).join(" ");
+    return;
+  }
   const flagged = new Set((a.notes?.top || []).filter((n) => n.word != null).map((n) => n.word));
   el.innerHTML = a.words.map((w, i) => {
     const cls = w.error === "Omission" ? "miss" : tone(w.acc);
-    return `<span class="w ${cls} ${flagged.has(i) ? "flag" : ""} ${S.selWord === i ? "sel" : ""}" data-i="${i}">${esc(w.word)}</span>`;
+    const k = normW(w.word);
+    return `<span class="w ${cls} ${flagged.has(i) ? "flag" : ""} ${coached.has(k) ? "coachmark" : ""} ${S.selWord === i || focus?.has(k) ? "sel" : ""}" data-i="${i}">${esc(w.word)}</span>`;
   }).join(" ");
   $$(".w", el).forEach((s) => (s.onclick = () => wordDetail(+s.dataset.i)));
+}
+
+function renderCoach(a) {
+  const box = $("#coach");
+  const c = a.coach;
+  if (!c && !a.coach_error) { box.hidden = true; return; }
+  box.hidden = false;
+  if (!c) {
+    box.innerHTML = `<div class="coach-off"><div><h4 style="margin-top:0">Coach</h4>${esc(a.coach_error)}</div>
+      ${/Settings/.test(a.coach_error) ? `<button class="ghost" onclick="go('settings')">Open Settings</button>` : ""}</div>`;
+    return;
+  }
+  const sc = c.american_score;
+  const col = sc == null ? "mute" : sc >= 80 ? "good" : sc >= 60 ? "mid" : "bad";
+  box.innerHTML = `
+    <div class="coach-top">
+      <div class="coach-score" style="border-color:var(--${col})"><div><b style="color:var(--${col})">${sc ?? "–"}</b><span>American</span></div></div>
+      <div>
+        <h4 style="margin:0 0 4px">Your coach</h4>
+        <p class="coach-verdict">${esc(c.verdict)}</p>
+        ${c.good ? `<div class="coach-good">✓ ${esc(c.good)}</div>` : ""}
+      </div>
+    </div>
+    ${c.fixes.length ? `<div class="fixes">${c.fixes.map((f, i) => `
+      <div class="fix" data-word="${esc(f.word)}">
+        <div class="fix-head"><span class="fix-num">${i + 1}</span><span class="fix-word">${esc(f.word)}</span>${f.type ? `<span class="fix-type">${esc(f.type)}</span>` : ""}</div>
+        ${f.you_said || f.american ? `<div class="fix-compare">
+          <div class="you"><small>You said</small><b>${esc(f.you_said || "—")}</b></div>
+          <div class="arrow">→</div>
+          <div class="am"><small>American</small><b>${esc(f.american || "—")}</b></div></div>` : ""}
+        <div class="fix-how">${esc(f.how)}</div>
+      </div>`).join("")}</div>` : ""}
+    ${c.next_take ? `<div class="next-take"><b>Next take:</b> ${esc(c.next_take)}</div>` : ""}`;
+  $$(".fix", box).forEach((el) => (el.onclick = () => { S.focusWord = el.dataset.word; renderLine(); playRef(); }));
 }
 
 function wordDetail(i) {
@@ -297,7 +351,9 @@ function wordDetail(i) {
 
 function showAnalysis(a) {
   S.lastAnalysis = a;
-  $("#results").hidden = false;
+  S.focusWord = null;
+  renderCoach(a);
+  $("#results").hidden = !(a.scores || a.chart || (a.notes?.all || []).length);
   const sc = a.scores;
   $("#scores").innerHTML = sc
     ? [["overall", "Overall"], ["accuracy", "Sounds"], ["prosody", "Melody & rhythm"], ["fluency", "Fluency"], ["completeness", "Completeness"]]

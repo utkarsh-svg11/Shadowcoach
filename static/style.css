@@ -138,3 +138,33 @@ legend{padding:0 6px;font-weight:600}
   .line{font-size:22px}
   .stage{padding:16px}
 }
+
+/* coach */
+.coach{border-color:rgba(242,165,65,.45)}
+.coach-top{display:flex;gap:18px;align-items:flex-start}
+.coach-score{flex:none;width:84px;height:84px;border-radius:50%;display:grid;place-items:center;border:3px solid var(--mid);text-align:center}
+.coach-score b{font:600 28px/1 var(--serif);display:block}
+.coach-score span{font-size:10px;color:var(--mute);letter-spacing:.06em;text-transform:uppercase}
+.coach-verdict{font-size:17px;line-height:1.5;margin:4px 0 6px}
+.coach-good{color:var(--good);font-size:14px}
+.fixes{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.fix{background:var(--bg2);border-radius:12px;padding:14px 16px;cursor:pointer;border:1px solid transparent}
+.fix:hover{border-color:var(--line)}
+.fix-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.fix-num{width:24px;height:24px;border-radius:50%;background:var(--you);color:#1b1408;display:grid;place-items:center;font-weight:600;font-size:13px;flex:none}
+.fix-word{font:600 19px var(--serif)}
+.fix-type{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--mute);border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+.fix-compare{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;margin-bottom:8px}
+.fix-compare div{background:var(--card);border-radius:8px;padding:8px 10px}
+.fix-compare small{display:block;font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+.fix-compare .you b{color:var(--you)} .fix-compare .am b{color:var(--ref)}
+.fix-compare .arrow{color:var(--mute);background:none;padding:0}
+.fix-how{font-size:14.5px}
+.next-take{margin-top:16px;padding:12px 14px;border-radius:10px;background:rgba(95,200,192,.1);border:1px solid rgba(95,200,192,.35)}
+.next-take b{color:var(--ref)}
+.coach-off{display:flex;justify-content:space-between;align-items:center;gap:12px}
+details summary{cursor:pointer;font-weight:600;padding:2px 0}
+details[open] summary{margin-bottom:14px}
+.linkish{background:none;border:0;color:var(--ref);padding:6px 0 0;cursor:pointer}
+.line .w.coachmark{background:rgba(242,165,65,.18);border-radius:5px}
+@media (max-width:860px){.fix-compare{grid-template-columns:1fr}.fix-compare .arrow{display:none}.coach-top{flex-direction:column}}

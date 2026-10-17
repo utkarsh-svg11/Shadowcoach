@@ -29,6 +29,7 @@ DEFAULT_SETTINGS = {
     "gemini_key": "",
     "gemini_model": "gemini-3.8-flash-tts",
     "gemini_voice": "Charon",
+    "gemini_coach_model": "gemini-3.8-flash",
     "gemini_style": "Calm, confident documentary narrator. Clear, natural pace.",
     "target_speaker": "",              # speaker id whose style you're matching
     "export_gap": 0.45,                # seconds of silence between sentences

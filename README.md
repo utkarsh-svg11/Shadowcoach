@@ -7,12 +7,13 @@ Sentence-by-sentence shadowing for voiceovers, with an accent check that listens
 1. **Paste a script.** It's split into sentences.
 2. **Hear an American reference** for each sentence — Azure (default), OpenAI or ElevenLabs, switchable any time. Slow it to 0.6×–0.9× and loop it.
 3. **Record yourself** (press `R`). It plays reference → you back to back automatically.
-4. **Accent check** on every take, from the audio itself:
+4. **Your coach** (Gemini key) listens to the reference and your take side by side and tells you, in plain words, the 2–4 changes that matter most: what you said, how an American says it, and exactly what to do with your mouth, tongue or pitch — plus one thing to focus on in the next take.
+5. **Detailed measurements** on every take, from the audio itself:
    - **Sounds** — Azure pronunciation assessment (American English) scores every phoneme and tells you what it heard instead, e.g. “/v/ came out closer to /w/”, with a mouth-position tip.
    - **Melody** — your pitch curve is drawn over the reference, time-aligned word by word. Flags flat delivery, missed focus words, and endings that rise when they should fall.
    - **Word stress** — finds the loudest/longest/highest syllable in each word and compares it with the reference (“stress *char* in *character*”).
    - **Rhythm** — words you stretched or clipped, pauses you added or skipped, and pace.
-5. **Keep your best take** (`K`) and press **Build final voiceover** to get one MP3/WAV, trimmed, evenly spaced and loudness-normalised for YouTube (−14 LUFS).
+6. **Keep your best take** (`K`) and press **Build final voiceover** to get one MP3/WAV, trimmed, evenly spaced and loudness-normalised for YouTube (−14 LUFS).
 
 ### Learn from real narrators
 
@@ -32,7 +33,7 @@ YouTube often blocks downloads from cloud servers. If that happens, download the
 | Service | Used for | Free tier |
 |---|---|---|
 | **Azure Speech** (required for the accent check) | accent check, speaker transcription, default reference voice | F0: 5 audio hours/month speech-to-text, 0.5M characters/month neural TTS |
-| Gemini / Google AI Studio (optional) | alternative reference voice | free tier with daily limits |
+| **Gemini / Google AI Studio** (recommended) | the coach, and an alternative reference voice | free tier with daily limits |
 | OpenAI (optional) | alternative reference voice | paid |
 | ElevenLabs (optional) | alternative reference voice | limited free credits |
 
